@@ -1,0 +1,65 @@
+﻿syntax = "proto3";
+
+enum SessionMsgType{
+	S_NONE = 0;
+	S_CLOSE = 1;
+	S_GETKEY = 2;
+	S_GETSEED = 3;
+	S_CHAT = 4;
+	S_REGISTER = 5;
+	S_LOGIN = 6;
+	S_LOGOUT = 7;
+}
+
+message SessionMsg{
+	SessionMsgType MsgType = 1;
+	bool result = 2;
+	int32 key = 3;
+	int32 seed = 4;
+	string chatMsg = 5;
+	string name = 6;
+	string account = 7;
+	string password = 8;
+}
+
+enum GameMsgType{
+	G_NONE = 0;
+	G_CREATE = 1;
+	G_POSITION = 2;
+	G_ATTACK = 3;
+	G_ENEMY_HURT = 4;
+	G_CHAT = 5;
+	G_GET_DAMAGE = 6;
+}
+
+message GameMsg{
+	GameMsgType MsgType = 1;
+	float x = 2;
+	float y = 3;
+	int32 key = 4;
+	float angle = 5;
+	float atk = 6;
+	int32 enemyTag = 7;
+	string chatMsg = 8;
+	repeated int32 keys = 9;
+	repeated float damage = 10;
+}
+
+enum RoomMsgType{
+	R_NONE = 0;
+	R_CREATE = 1;
+	R_INTO = 2;
+	R_LEAVE = 3;
+	R_START = 4;
+	R_READY = 5;
+	R_ROOMLIST = 6;
+}
+
+message RoomMsg{
+	RoomMsgType MsgType = 1;
+	int32 roomId = 2;
+	bool result = 3;
+	repeated int32 roomList = 4;
+	repeated bool roomStatuses = 5;
+	repeated int32 roomNumOfPeople = 6;
+}
