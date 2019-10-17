@@ -37,7 +37,7 @@ bool RegisterLoginScene::init(){
 	this->addChild(bgSprite2, 1);
 
 	//切换注册按钮
-	auto radioRegisterButton = RadioButton::create("SelectRegisterDisable.png", "SelectRegister.png");
+	auto radioRegisterButton = RadioButton::create("SelectRegisterLoginDisable.png", "SelectRegisterLogin.png");
 	radioRegisterButton->setAnchorPoint(Vec2::ZERO);
 	radioRegisterButton->setPosition(
 		Vec2(0, bgSprite2->getContentSize().height - radioRegisterButton->getContentSize().height));
@@ -50,7 +50,7 @@ bool RegisterLoginScene::init(){
 	bgSprite2->addChild(radioRegisterButton, 1);
 
 	//切换登录按钮
-	auto radioLoginButton = RadioButton::create("SelectRegisterDisable.png", "SelectRegister.png");
+	auto radioLoginButton = RadioButton::create("SelectRegisterLoginDisable.png", "SelectRegisterLogin.png");
 	radioLoginButton->setAnchorPoint(Vec2::ZERO);
 	radioLoginButton->setPosition(
 		Vec2(radioLoginButton->getContentSize().width, bgSprite2->getContentSize().height - radioLoginButton->getContentSize().height));
