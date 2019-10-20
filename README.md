@@ -30,6 +30,8 @@ git clone https://github.com/CenJieTeng/socketcore.git
 Open project MyGame/proj.win32/MyGame.slh with vs2017
 
 Add  MyGame/socketcore/libsocket to VC++ include dir
+Comment out the stdafx.h #include <sol/sol.hpp> line.
+
 Create new filter and rename Classes
 Add MyGame/Classes/ all files to here 
 Create new filter and rename network
