@@ -19,6 +19,9 @@ Enemy::~Enemy(){
 	bDead_ = true;
 	if (threadFollow_ && threadFollow_->joinable())
 		threadFollow_->join();
+
+	sprite_->release();
+	//scene_->release();
 }
 
 std::shared_ptr<Enemy> Enemy::create(){
@@ -56,7 +59,7 @@ bool Enemy::init(){
 	position_ = originPosition_;
 	originSpeed_ = speed_ = Vec2(5, 5);
 	curBlood_ = maxBlood_ = 100 * scale_;
-	atk_ = 1;
+	atk_ = 5 * scale_;
 	attackDistance_ *= scale_;
 	bDead_ = false;
 	bCleanable_ = false;
@@ -68,6 +71,9 @@ bool Enemy::init(){
 	sprite_->setAnchorPoint(Vec2(0.5, 0.25));
 	sprite_->setPosition(position_);
 	sprite_->setScale(scale_); //缩放
+
+	sprite_->retain();
+	scene_->retain();
 
 	Size spriteSize = sprite_->getContentSize();
 	Vec2 anchoPoint = sprite_->getAnchorPoint();
@@ -178,19 +184,25 @@ void Enemy::follow(std::shared_ptr<Hero> hero){
 
 		if (threadFollow_ && threadFollow_->joinable())
 			threadFollow_->join();
-
-		threadFollow_ = std::shared_ptr<std::thread>(new std::thread([this, hero]() {
+		
+		auto self = shared_from_this();
+		threadFollow_ = std::shared_ptr<std::thread>(new std::thread([self, this]() {
+			auto hero = curFollow_;
 			do {
+				if (hero->isDead()) {
+					bFollow_ = false;
+					break;
+				}
 				//根据enemy的大小有不同的攻击方式
 				if (scale_ < 2) {
-					if (GOUGU(abs(hero->getBodyPosition().x - position_.x), abs(hero->getBodyPosition().y - position_.y)) <= attackDistance_) {
+					if (!hero->isDead() && GOUGU(abs(hero->getBodyPosition().x - position_.x), abs(hero->getBodyPosition().y - position_.y)) <= attackDistance_) {
 						attack1(hero);
 					}
 				}
 				else {
 					static int count = 0;
 
-					if (GOUGU(abs(hero->getBodyPosition().x - position_.x), abs(hero->getBodyPosition().y - position_.y)) <= attackDistance_ * 3) {
+					if (!hero->isDead() && GOUGU(abs(hero->getBodyPosition().x - position_.x), abs(hero->getBodyPosition().y - position_.y)) <= attackDistance_ * 3) {
 						attack2(hero);
 
 						//每间隔1次attack2，释放2次attack3
@@ -238,7 +250,7 @@ void Enemy::follow(std::shared_ptr<Hero> hero){
 				}
 
 				//播放行走动画
-				Director::getInstance()->getScheduler()->performFunctionInCocosThread([this]() {
+				Director::getInstance()->getScheduler()->performFunctionInCocosThread([self, this]() {
 					auto animate = moveAnimate_->clone();
 					sprite_->runAction(animate);
 				});
@@ -263,25 +275,26 @@ void Enemy::attack1(std::shared_ptr<Hero> hero) {
 	while (!bDead_ && !hero->isDead()){
 
 		//绘制攻击范围
-		Director::getInstance()->getScheduler()->performFunctionInCocosThread([scene = scene_, this]() {
+		auto self = shared_from_this();
+		Director::getInstance()->getScheduler()->performFunctionInCocosThread([self, this]() {
 			drawNode_ = DrawNode::create();
 			drawNode_->drawCircle(position_, attackDistance_, 0, 10, false, Color4F::RED);
-			scene->addChild(drawNode_, 1, 17);
+			scene_->addChild(drawNode_, 1, 17);
 		});
 
 		//播放攻击动画
-		Director::getInstance()->getScheduler()->performFunctionInCocosThread([this]() {
+		Director::getInstance()->getScheduler()->performFunctionInCocosThread([self, this]() {
 			auto animate = attackAnimate_->clone();
 			sprite_->runAction(animate);
 		});
 		std::this_thread::sleep_for(std::chrono::milliseconds(attackAnimateDelay_));
 
-		Director::getInstance()->getScheduler()->performFunctionInCocosThread([scene = scene_, this]() {
-			scene->removeChild(drawNode_); //删除绘制
+		Director::getInstance()->getScheduler()->performFunctionInCocosThread([self, this]() {
+			scene_->removeChild(drawNode_); //删除绘制
 		});
 
 		//判断是否脱离攻击距离
-		if (GOUGU(abs(hero->getBodyPosition().x - position_.x), abs(hero->getBodyPosition().y - position_.y)) > attackDistance_ + attackAttachDistance_)
+		if (!hero->isDead() && GOUGU(abs(hero->getBodyPosition().x - position_.x), abs(hero->getBodyPosition().y - position_.y)) > attackDistance_ + attackAttachDistance_)
 			break;
 
 		hero->beHurt(atk_);
@@ -302,14 +315,15 @@ void Enemy::attack2(std::shared_ptr<Hero> hero) {
 		auto pos = hero->getPosition(); //获取攻击点
 
 		//绘制攻击范围
-		Director::getInstance()->getScheduler()->performFunctionInCocosThread([scene = scene_, hero, pos, this]() {
+		auto self = shared_from_this();
+		Director::getInstance()->getScheduler()->performFunctionInCocosThread([self, pos, this]() {
 			drawNode_ = DrawNode::create();
 			drawNode_->drawCircle(pos, attackDistance_ + attackAttachDistance_, 0, 10, false, Color4F::RED);
-			scene->addChild(drawNode_, 1, 17);
+			scene_->addChild(drawNode_, 1, 17);
 		});
 
 		//播放攻击动画jump
-		Director::getInstance()->getScheduler()->performFunctionInCocosThread([this]() {
+		Director::getInstance()->getScheduler()->performFunctionInCocosThread([self, this]() {
 			auto animate = attackAnimateJump_->clone();
 			sprite_->runAction(animate);
 		});
@@ -319,18 +333,18 @@ void Enemy::attack2(std::shared_ptr<Hero> hero) {
 		sprite_->setPosition(position_);
 
 		//播放攻击动画fall
-		Director::getInstance()->getScheduler()->performFunctionInCocosThread([pos, this]() {
+		Director::getInstance()->getScheduler()->performFunctionInCocosThread([self, pos, this]() {
 			auto animate = attackAnimateFall_->clone();
 			sprite_->runAction(animate);
 		});
 		std::this_thread::sleep_for(std::chrono::milliseconds(attackAnimateFallDelay_));
 
-		Director::getInstance()->getScheduler()->performFunctionInCocosThread([scene = scene_, this]() {
-			scene->removeChild(drawNode_); //删除绘制
+		Director::getInstance()->getScheduler()->performFunctionInCocosThread([self, this]() {
+			scene_->removeChild(drawNode_); //删除绘制
 		});
 
 		//判断是否脱离攻击距离
-		if (GOUGU(abs(hero->getBodyPosition().x - position_.x), abs(hero->getBodyPosition().y - position_.y)) > attackDistance_ + attackAttachDistance_) {
+		if (!hero->isDead() && GOUGU(abs(hero->getBodyPosition().x - position_.x), abs(hero->getBodyPosition().y - position_.y)) > attackDistance_ + attackAttachDistance_) {
 			//恢复跟随
 			speed_ = originSpeed_;
 			return;
@@ -345,7 +359,8 @@ void Enemy::attack3(std::shared_ptr<Hero> hero) {
 	if (bDead_) 
 		return;
 
-	Director::getInstance()->getScheduler()->performFunctionInCocosThread([hero, this]() {
+	auto self = shared_from_this();
+	Director::getInstance()->getScheduler()->performFunctionInCocosThread([self, this]() {
 		//释放前的征兆, 缩放
 		sprite_->runAction(
 			Sequence::create(ScaleTo::create(0.5f, scale_ + 0.2f),
@@ -353,7 +368,7 @@ void Enemy::attack3(std::shared_ptr<Hero> hero) {
 	});
 	std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 
-	Director::getInstance()->getScheduler()->performFunctionInCocosThread([scene = scene_, hero, this]() {
+	Director::getInstance()->getScheduler()->performFunctionInCocosThread([self, this]() {
 		static Vec2 force[24] = 
 		{ {1.5,1.5},{1.5,-1.5}, {1.5, 0}, {-1.5, 1.5}, {-1.5, -1.5}, {-1.5, 0}, {0,1.5}, {0, -1.5}, 
 		  {1,1.5}, {1, 0.5}, {1, -0.5}, {1, -1.5}, {-1, 1.5}, {-1, 0.5}, {-1, -0.5}, {-1, -1.5},
@@ -374,12 +389,12 @@ void Enemy::attack3(std::shared_ptr<Hero> hero) {
 			bombBody->applyImpulse(Vec2(force[i].x * 500, force[i].y * 500));
 
 			bombsprite->setPhysicsBody(bombBody);
-			scene->addChild(bombsprite, 1);
+			scene_->addChild(bombsprite, 1);
 
 			//创建定时器，到达一定时间清除炮弹
 			bombsprite->runAction(
 				Sequence::create(DelayTime::create(5.0f),
-					CallFunc::create([scene = scene, bombsprite]() { scene->removeChild(bombsprite); }), nullptr));
+					CallFunc::create([self, this, bombsprite]() { scene_->removeChild(bombsprite); }), nullptr));
 		}
 	});
 }

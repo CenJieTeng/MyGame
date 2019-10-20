@@ -13,7 +13,7 @@ using cocos2d::Vec2;
 using cocos2d::Size;
 
 //敌人类
-class Enemy : public Biosome{
+class Enemy : public Biosome, public std::enable_shared_from_this<Enemy> {
 public:
 	Enemy() = default;
 	Enemy(cocos2d::Scene *scene, Vec2 pos) : Enemy(scene, pos, 0.5f) {}
@@ -38,7 +38,7 @@ public:
 	const bool isFollow() { return bFollow_; } //是否跟随
 	const float getHateRadius() { return hateRadius_; } //返回仇恨半径
 	void setScale(float scale) { scale_ = scale; } //设置缩放
-	const std::weak_ptr<Hero> getCurFollow() { return curFollow_; } //返回当前跟随hero
+	const std::shared_ptr<Hero> getCurFollow() { return curFollow_; } //返回当前跟随hero
 	virtual void beHurt(float val) override;
 
 	static std::unordered_map<int, std::shared_ptr<Enemy>> mapTagToEnemy; //tag到enemy的映射
@@ -62,7 +62,7 @@ private:
 	float scale_; //缩放比例
 	Vec2 originSpeed_; //初始移动速度
 	std::shared_ptr<std::thread> threadFollow_ = nullptr;
-	std::weak_ptr<Hero> curFollow_; //当前跟随的hero
+	std::shared_ptr<Hero> curFollow_; //当前跟随的hero
 };
 
 #endif // !_ENEMY_H_
