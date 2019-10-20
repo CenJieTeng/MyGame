@@ -6,7 +6,7 @@
 class GameScene1 : public GameScene
 {
 public:
-	static cocos2d::Scene* createScene();
+	static cocos2d::Scene* createScene(bool ol);
 
 	virtual bool init();
 	CREATE_FUNC(GameScene1);
@@ -17,6 +17,7 @@ private:
 	cocos2d::Size visibleSize_; //屏幕大小
 	cocos2d::Size bgSize_; //背景图片大小
 	cocos2d::PhysicsWorld *phyWorld_;
+	bool bOnlineGame;
 	int countR_;
 	int countL_;
 	int countU_;

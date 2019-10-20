@@ -3,10 +3,11 @@
 
 USING_NS_CC;
 
-cocos2d::Scene * GameScene1::createScene(){
+cocos2d::Scene * GameScene1::createScene(bool ol){
 	Scene *phyScene_ = Scene::createWithPhysics(); //创建物理场景
 	phyScene_->getPhysicsWorld()->setDebugDrawMask(PhysicsWorld::DEBUGDRAW_ALL); //设置debug模式
 
+	GameScene::setOnlineGame(ol);
 	GameScene1 *gameScene = GameScene1::create();
 	gameScene->setPhyWorld(phyScene_->getPhysicsWorld()); //把物理世界传到父场景
 	phyScene_->addChild(gameScene);

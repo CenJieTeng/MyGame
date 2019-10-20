@@ -38,15 +38,19 @@ public:
 	void makeBombUpdate(float delta); //发射子弹刷新函数
 	void menuPhyDebug(cocos2d::Ref *ref); //调试模式切换开关
 	void setPhyWorld(cocos2d::PhysicsWorld *world) { phyWorld_ = world; }; //设置物理世界
+	static void setOnlineGame(bool ol); //设置是否在线游戏
 	static void setSession(session_ptr sp);//设置会话
 
 protected:
-	bool initNetwork(); //初始化网络
 	std::shared_ptr<Hero> hero_ = nullptr; //玩家对象
+
+private:
+	bool initNetwork(); //初始化网络
 
 private:
 	static const int MaxEnemyNum_; //最大敌人数量
 	static session_ptr session_; //会话
+	static bool bOnlineGame_; //是否在线游戏
 	bool bSetSeed_; //是否设置随机数种子
 	bool isFocused_; //焦点在textField_上
 	int level_; //关卡等级

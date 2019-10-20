@@ -1,6 +1,7 @@
 ﻿#include "PrimaryMenuScene.h"
-#include "GameScene_1.h"
 #include "HallScene.h"
+#include "RegisterLoginScene.h"
+#include "GameScene_1.h"
 
 USING_NS_CC;
 
@@ -64,10 +65,13 @@ bool PrimaryMenuScene::init()
 
 //playGame按钮回调
 void PrimaryMenuScene::menuPlayGame(Ref * ref){
-	Director::getInstance()->replaceScene(GameScene1::createScene());
+	Director::getInstance()->replaceScene(GameScene1::createScene(false));
 }
 
 //onlineGame按钮回调
 void PrimaryMenuScene::menuOnlineGame(Ref * ref) {
-	Director::getInstance()->replaceScene(HallScene::createScene());
+	auto scene = (HallScene*)HallScene::createScene();
+	Director::getInstance()->pushScene(scene);
+	RegisterLoginScene::setSession(scene->getSession());
+	Director::getInstance()->pushScene(RegisterLoginScene::createScene());
 }

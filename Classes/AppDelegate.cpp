@@ -99,15 +99,15 @@ bool AppDelegate::applicationDidFinishLaunching() {
     register_all_packages();
 
     // create a scene. it's an autorelease object
-    //auto scene = HelloWorldScene::createScene();
+    auto scene = HelloWorldScene::createScene();
 	//auto scene = PrimaryMenuScene::createScene();
 	//auto scene = GameScene1::createScene();
-	HallScene *scene = (HallScene*)HallScene::createScene();
+	//HallScene *scene = (HallScene*)HallScene::createScene();
 
     // run
 	director->runWithScene(TransitionFade::create(0, scene));
-	RegisterLoginScene::setSession(scene->getSession());
-	Director::getInstance()->pushScene(RegisterLoginScene::createScene());
+	//RegisterLoginScene::setSession(scene->getSession());
+	//Director::getInstance()->pushScene(RegisterLoginScene::createScene());
 
     return true;
 }

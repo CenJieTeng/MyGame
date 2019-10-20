@@ -24,6 +24,12 @@ void GameScene::setSession(session_ptr sp) {
 }
 session_ptr GameScene::session_ = nullptr; //会话
 
+ //设置是否在线游戏
+void GameScene::setOnlineGame(bool ol) {
+	bOnlineGame_ = ol;
+}
+bool GameScene::bOnlineGame_; //是否在线游戏
+
 bool GameScene::init()
 {
 	if (!Scene::init())
@@ -35,6 +41,9 @@ bool GameScene::init()
 	killCount_ = 0;
 	bSetSeed_ = false;
 	isFocused_ = false;
+
+	if (!bOnlineGame_)
+		bSetSeed_ = true;
 
 	//初始化等级标签
 	level_ = 1;
@@ -54,7 +63,8 @@ bool GameScene::init()
 	Enemy::initCreateEnemyTag(100);
 
 	//初始化网络环境
-	initNetwork();
+	if (bOnlineGame_)
+		initNetwork();
 
 	//获取默认camera
 	defaultCamera_ = this->getDefaultCamera();
@@ -156,8 +166,9 @@ bool GameScene::init()
 
 GameScene::~GameScene(){
 	//清理Biosome
-	Enemy::mapTagToEnemy.clear();
 	Hero::mapTagToHero.clear();
+	Enemy::mapTagToEnemy.clear();
+	players_.clear();
 }
 
 bool GameScene::initNetwork(){
@@ -405,12 +416,13 @@ void GameScene::onTextFieldEvent(cocos2d::Ref * ref, cocos2d::ui::TextField::Eve
 void GameScene::update(float delta) {
 
 	if (hero_->isDead()) {
+		unscheduleUpdate();
+
 		//清理Biosome
-		Enemy::mapTagToEnemy.clear();
 		Hero::mapTagToHero.clear();
+		Enemy::mapTagToEnemy.clear();
 
 		//切换场景
-		unscheduleUpdate();
 		Director::getInstance()->popScene();
 
 		return;
@@ -470,7 +482,7 @@ void GameScene::update(float delta) {
 			//保证已经没有enemy正在follow即将清除的hero,不然enemy会引用销毁的phyBody(hero->phyBody)
 			bool noneFollow = true;
 			for (const auto e : Enemy::mapTagToEnemy) {
-				if (e.second->isFollow() && e.second->getCurFollow().lock() == begin->second) {
+				if (e.second->isFollow() && e.second->getCurFollow() == begin->second) {
 					noneFollow = false;
 					break;
 				}	
@@ -504,23 +516,29 @@ void GameScene::update(float delta) {
 			continue;
 
 		auto enemy = e.second;
-		//如果有多个hero在范围内，随机锁定其中一个
-		std::map<int,std::shared_ptr<Hero>> heros;
-		for (auto h : players_) { 
-			auto hero = h.second;
-			//获取仇恨范围内的hero
-			auto d = GOUGU(abs(hero->getPosition().x - enemy->getPosition().x), abs(hero->getPosition().y - enemy->getPosition().y));
-			if (d <= enemy->getHateRadius()) {
-				heros.emplace(h);
+
+		if (bOnlineGame_) {
+			//如果有多个hero在范围内，随机锁定其中一个
+			std::map<int, std::shared_ptr<Hero>> heros;
+			for (auto h : players_) {
+				auto hero = h.second;
+				//获取仇恨范围内的hero
+				auto d = GOUGU(abs(hero->getPosition().x - enemy->getPosition().x), abs(hero->getPosition().y - enemy->getPosition().y));
+				if (d <= enemy->getHateRadius()) {
+					heros.emplace(h);
+				}
+			}
+
+			//随机锁定
+			if (heros.size()) {
+				int index = std::rand() % heros.size();
+				auto iter = heros.begin();
+				std::advance(iter, index);
+				enemy->follow(iter->second);
 			}
 		}
-
-		//随机锁定
-		if (heros.size()) {
-			int index = std::rand() % heros.size();
-			auto iter = heros.begin();
-			std::advance(iter, index);
-			enemy->follow(iter->second);
+		else {
+			enemy->follow(hero_);
 		}
 	}
 
@@ -530,7 +548,7 @@ void GameScene::update(float delta) {
 	//人物移动
 	hero_->getSprite()->setPosition(hero_->getPosition());
 
-	if (session_) {
+	if (bOnlineGame_) {
 		GameMsg msg;
 		msg.set_msgtype(GameMsgType::G_POSITION);
 		msg.set_x(hero_->getPosition().x);
@@ -557,7 +575,7 @@ void GameScene::update(float delta) {
 void GameScene::makeBombUpdate(float delta){
 	hero_->makeBomb();
 
-	if (session_) {
+	if (bOnlineGame_) {
 		GameMsg msg;
 		msg.set_msgtype(GameMsgType::G_ATTACK);
 		session_->doWrite(message::serialize(msg), MessageType::PROTO, ProtoMessageType::GAME_MSG);
@@ -640,7 +658,7 @@ bool GameScene::onContactBegin(cocos2d::PhysicsContact &contact){
 					enemy = Enemy::getEnemyByTag(shapeB->getBody()->getTag());
 				enemy->beHurt(hero->getAtk());
 
-				if (session_) {
+				if (bOnlineGame_) {
 					GameMsg msg;
 					msg.set_msgtype(GameMsgType::G_ENEMY_HURT);
 					msg.set_atk(hero->getAtk());

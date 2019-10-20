@@ -322,7 +322,7 @@ void HallScene::readCallBack(session_ptr sp){
 			//跳转场景
 			Director::getInstance()->getScheduler()->performFunctionInCocosThread([this]() {
 				GameScene::setSession(session_);
-				Director::getInstance()->pushScene(GameScene1::createScene());
+				Director::getInstance()->pushScene(GameScene1::createScene(true));
 
 				//通知服务器准备完成
 				RoomMsg msg;
@@ -351,10 +351,12 @@ void HallScene::readCallBack(session_ptr sp){
 			});
 		}break;
 		default:
-			CCASSERT(false, "Unknow room control type!");
+			;
+			//CCASSERT(false, "Unknow room control type!");
 		}
 	}break;
 	default:
-		CCASSERT(false, "Unknow proto message type!");
+		;
+		//CCASSERT(false, "Unknow proto message type!");
 	}
 }
