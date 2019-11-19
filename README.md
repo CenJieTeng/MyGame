@@ -32,15 +32,20 @@ Open project MyGame/proj.win32/MyGame.slh with vs2017
 Add  MyGame/socketcore/libsocket to VC++ include dir
 Comment out the stdafx.h #include <sol/sol.hpp> line.
 
+Replace `message.pb.h` `message.pb.cc`
+cd Classes
+del message.pb.h & del message.pb.cc
+protoc --cpp_out=./ message.proto
+
 Create new filter and rename Classes
 Add MyGame/Classes/ all files to here 
 Create new filter and rename network
 Add MyGame/socketcore/libsocket/header.hpp & message.hpp & session.cpp & socket.cpp to network/
 ```
 
-- 4 Import `protocol buffer`, `boost::asio` and `lua` library (You grope it for yourshlf)
-- 5 Retarget project
-- 6 Build project: `ctrl + f5`
+- 5 Import `protocol buffer`, `boost::asio` and `lua` library (You grope it for yourshlf)
+- 6 Retarget project
+- 7 Build project: `ctrl + f5`
 
 ## Possible errors
 #### Runtimelibrary mismatch: MTd mismatch MDd
